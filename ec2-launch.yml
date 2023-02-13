@@ -1,0 +1,16 @@
+---
+- hosts: localhost
+  gather_facts: false
+  tasks:
+    - name: Create instance
+      amazon.aws.ec2_instance:
+        name: "hello-aws"
+        key_name: "lucatic_key"
+        vpc_subnet_id: subnet-0133c61a0a52088e4
+        instance_type: t2.micro
+        security_group: sg-01026b2bbaa8626e7
+        network:
+          assign_public_ip: true
+        image_id: ami-0b752bf1df193a6c4
+        tags:
+          Environment: Testing

@@ -1,0 +1,27 @@
+---
+- hosts: ec2
+  become: true
+
+  tasks:
+    - name: Install httpd
+      yum:
+        name: httpd
+        state: present
+        update_cache: true
+
+    - name: Disable Docker
+      command: systemctl stop docker
+
+    - name: Run httpd server
+      command: systemctl start httpd
+
+    - name: Enable httpd after reboot
+      command: systemctl enable httpd
+
+    - name: Copy files to remote server
+      copy:
+        src: ./public_html/
+        dest: /var/www/html
+        owner: root
+        group: root
+        mode: 0644
