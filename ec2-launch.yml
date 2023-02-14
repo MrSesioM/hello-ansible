@@ -1,16 +1,58 @@
 ---
-- hosts: localhost
+- name: Create an instance
+  hosts: localhost
   gather_facts: false
+
+  vars:
+    keypair: lucatic_key
+    instance_type: t2.micro
+    security_group: sg-01026b2bbaa8626e7
+    subnet_id: subnet-0133c61a0a52088e4
+    image: ami-0b752bf1df193a6c4
+    region: eu-west-1
+
   tasks:
-    - name: Create instance
+    - name: Launch instance
       amazon.aws.ec2_instance:
-        name: "hello-aws"
-        key_name: "lucatic_key"
-        vpc_subnet_id: subnet-0133c61a0a52088e4
-        instance_type: t2.micro
-        security_group: sg-01026b2bbaa8626e7
+        key_name: "{{ keypair }}"
+        vpc_subnet_id: "{{ subnet_id }}"
+        instance_type: "{{ instance_type }}"
+        image_id: "{{ image }}"
+        state: running
+        wait: true
+        region: "{{ region }}"
+        security_group: "{{ security_group }}"
         network:
           assign_public_ip: true
-        image_id: ami-0b752bf1df193a6c4
+        image_id: "{{ image }}"
         tags:
-          Environment: Testing
+          Name: hello-ansible
+          APP: vue2048
+      register: ec2
+
+    - name: Print ec2_instance return information
+      ansible.builtin.debug:
+        var: ec2
+
+    - name: Add instance to host group
+      add_host:
+        hostname: "{{ item.public_ip_address }}"
+        groupname: launched
+      loop: "{{ ec2.instances }}"
+
+    - name: Waiting ssh to come up
+      delegate_to: "{{ item.public_dns_name }}"
+      wait_for_connection:
+        delay: 10
+        sleep: 5
+        timeout: 300
+      vars:
+        ansible_user: ec2-user
+      loop: "{{ ec2.instances }}"
+
+- name: Configure instance
+  hosts: launched
+  become: true
+  gather_facts: true
+  vars:
+    ansible_user: ec2-user
