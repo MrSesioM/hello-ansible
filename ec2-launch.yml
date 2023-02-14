@@ -56,3 +56,14 @@
   gather_facts: true
   vars:
     ansible_user: ec2-user
+  tasks:
+    - name: Install httpd
+      yum:
+        name: httpd
+        state: present
+        update_cache: true
+    - name: Enable httpd after reboot
+      service:
+        name: httpd
+        enabled: true
+        state: started
